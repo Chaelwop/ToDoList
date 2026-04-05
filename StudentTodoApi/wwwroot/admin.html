@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - Student To-Do System</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f9;
+    padding: 20px;
+}
+
+/* CONTAINER */
+.container {
+    max-width: 1100px;
+    margin: auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+}
+
+/* HEADER */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+h2 {
+    color: #2c3e50;
+}
+
+.header p {
+    color: #777;
+    font-size: 14px;
+}
+
+/* BUTTON */
+.logout {
+    background: #6c757d;
+    color: #fff;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.logout:hover {
+    background: #5a6268;
+}
+
+/* STATS */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+    margin: 25px 0;
+}
+
+.stat-card {
+    background: #f8f9fa;
+    padding: 18px;
+    border-radius: 8px;
+    border-left: 5px solid #007bff;
+    transition: 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-3px);
+}
+
+.stat-value {
+    font-size: 26px;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #666;
+}
+
+/* TABLE */
+h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #2c3e50;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+th, td {
+    padding: 12px;
+    border: 1px solid #eee;
+    text-align: left;
+}
+
+th {
+    background: #007bff;
+    color: #fff;
+}
+
+tr:nth-child(even) {
+    background: #f9f9f9;
+}
+
+tr:hover {
+    background: #eef4ff;
+}
+
+/* STATUS */
+.status-completed {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.status-pending {
+    color: #ffc107;
+    font-weight: bold;
+}
+
+/* DELETE BUTTON */
+.btn-delete {
+    background: #dc3545;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-delete:hover {
+    background: #c82333;
+}
+
+/* EMPTY */
+.empty-message {
+    text-align: center;
+    color: #999;
+    padding: 25px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+    <div class="header">
+        <div>
+            <h2>Admin Dashboard</h2>
+            <p>System Overview</p>
+        </div>
+        <button class="logout" onclick="logout()">Logout</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat-card">
+            <div class="stat-value" id="total-students">0</div>
+            <div class="stat-label">Total Students</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="total-tasks">0</div>
+            <div class="stat-label">Total Tasks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="completed-tasks">0</div>
+            <div class="stat-label">Completed Tasks</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="pending-tasks">0</div>
+            <div class="stat-label">Pending Tasks</div>
+        </div>
+    </div>
+
+    <h3>All Student Tasks</h3>
+
+    <table id="task-table">
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Section</th>
+                <th>Task Title</th>
+                <th>Status</th>
+                <th>Date Added</th>
+                <th>Time Added</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="task-body"></tbody>
+    </table>
+
+</div>
+
+<script>
+const user = JSON.parse(localStorage.getItem('user'));
+if (!user || user.role !== 'Admin') {
+    window.location.href = 'login.html';
+} else {
+    loadAllTasks();
+}
+
+async function loadAllTasks() {
+    const tasksResponse = await fetch('/api/tasks');
+    const tasks = await tasksResponse.json();
+
+    const studentsResponse = await fetch('/api/tasks/students');
+    const students = await studentsResponse.json();
+
+    const totalStudents = students.length;
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.isCompleted).length;
+    const pendingTasks = tasks.filter(t => !t.isCompleted).length;
+
+    document.getElementById('total-students').innerText = totalStudents;
+    document.getElementById('total-tasks').innerText = totalTasks;
+    document.getElementById('completed-tasks').innerText = completedTasks;
+    document.getElementById('pending-tasks').innerText = pendingTasks;
+
+    const body = document.getElementById('task-body');
+    body.innerHTML = '';
+
+    if (tasks.length === 0) {
+        body.innerHTML = '<tr><td colspan="7" class="empty-message">No tasks found</td></tr>';
+        return;
+    }
+
+    tasks.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    tasks.forEach(task => {
+        const taskDate = new Date(task.timestamp);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${task.studentName || 'Student #' + task.userId}</td>
+            <td>${task.studentSection || 'N/A'}</td>
+            <td>${task.title}</td>
+            <td class="${task.isCompleted ? 'status-completed' : 'status-pending'}">
+                ${task.isCompleted ? '✓ Completed' : '⏳ Pending'}
+            </td>
+            <td>${taskDate.toLocaleDateString()}</td>
+            <td>${taskDate.toLocaleTimeString()}</td>
+            <td><button class="btn-delete" onclick="deleteTask(${task.id})">Delete</button></td>
+        `;
+        body.appendChild(tr);
+    });
+}
+
+async function deleteTask(id) {
+    if (confirm('Are you sure you want to delete this task?')) {
+        const response = await fetch('/api/tasks/delete/' + id, { method: 'DELETE' });
+        if (response.ok) {
+            loadAllTasks();
+        } else {
+            alert('Failed to delete task');
+        }
+    }
+}
+
+function logout() {
+    localStorage.removeItem('user');
+    window.location.href = 'login.html';
+}
+</script>
+
+</body>
+</html>

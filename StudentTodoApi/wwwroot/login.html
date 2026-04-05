@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login - Student To-Do System</title>
+
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* LOGIN BOX */
+.container {
+    background: #ffffff;
+    padding: 30px;
+    width: 320px;
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    text-align: center;
+}
+
+/* TITLE */
+h2 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+}
+
+/* INPUTS */
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    outline: none;
+    transition: 0.2s;
+}
+
+input:focus {
+    border-color: #007bff;
+}
+
+/* BUTTON */
+button {
+    width: 100%;
+    padding: 10px;
+    background: #28a745;
+    color: #ffffff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+button:hover {
+    background: #218838;
+}
+
+/* TEXT */
+p {
+    margin-top: 15px;
+    font-size: 14px;
+    color: #555;
+}
+
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+.demo-creds {
+    margin-top: 20px;
+    font-size: 14px;
+    color: #555;
+    text-align: left;
+}
+.demo-creds strong {
+    display: block;
+    margin-bottom: 5px;
+    color: #2c3e50;
+}
+.demo-creds b {
+    width: 80px;
+    color: #2c3e50;
+    font-size: 12px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>Login</h2>
+
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+
+    <p>Don't have an account? <a href="register.html">Register</a></p>
+    <div class="demo-creds">
+            <strong>DEMO ACCOUNTS</strong><br>
+            <b>USERNAME:</b> admin <br>
+            <b>PASSWORD:</b> password<br>
+            <b>*REGISTER A NEW ACCOUNT TO TEST STUDENT ROLE</b>
+        </div>
+</div>
+<script>
+async function login() {
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+
+    const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+    });
+
+    if (response.ok) {
+        const user = await response.json();
+        localStorage.setItem('user', JSON.stringify(user));
+
+        if (user.role === 'Admin') {
+            window.location.href = 'admin.html';
+        } else {
+            window.location.href = 'student.html';
+        }
+    } else {
+        const error = await response.json();
+        alert(error.message || 'Login failed');
+    }
+}
+</script>
+
+</body>
+</html>
